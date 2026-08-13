@@ -75,28 +75,93 @@ const today = new Date();
 let isSoundEnabled = true;
 let currentTheme = 'auto'; // 'auto', 'light', 'dark'
 
-// 効果音（SE）用のAudioオブジェクト
-// ※ 実際の音声ファイル（.mp3 や .wav）を用意し、assets/se/ フォルダ等に配置してください。
-const seMove = new Audio('se/move.mp3');   // マス移動音
-const seInput = new Audio('se/input.mp3'); // 文字入力音
-const seDelete = new Audio('se/delete.mp3'); // 削除音
-const seClear = new Audio('se/clear.mp3'); // 正解音
-const seError = new Audio('se/error.mp3'); // 不正解（エラー）音
-const seButton = new Audio('se/button.mp3'); // ボタン
+// ==========================================
+// 効果音（SE）のハイブリッド対応（BGM停止対策 ＋ ローカル動作）
+// ==========================================
+const seMove = 'se/move.mp3';   
+const seInput = 'se/input.mp3'; 
+const seDelete = 'se/delete.mp3'; 
+const seClear = 'se/clear.mp3'; 
+const seError = 'se/error.mp3'; 
+const seButton = 'se/button.mp3'; 
 
-// 音量調整
-seMove.volume = 0.5;
-seInput.volume = 0.5;
-seDelete.volume = 0.5;
-seClear.volume = 0.5;
-seError.volume = 0.5;
-seButton.volume = 0.5;
+// ① ローカル環境（Cドライブ等）でテストする時のためのバックアップ
+const fallbackAudios = {
+    [seMove]: new Audio(seMove),
+    [seInput]: new Audio(seInput),
+    [seDelete]: new Audio(seDelete),
+    [seClear]: new Audio(seClear),
+    [seError]: new Audio(seError),
+    [seButton]: new Audio(seButton),
+};
+Object.values(fallbackAudios).forEach(a => a.volume = 0.5);
 
-// SE再生用の共通関数（設定がONの時のみ鳴らす）
-function playSE(audioObj) {
-    if (isSoundEnabled && audioObj) {
-        audioObj.currentTime = 0; // 連続再生できるように巻き戻す
-        audioObj.play().catch(e => console.log("SE再生ブロック:", e));
+let audioCtx = null;
+const audioBuffers = {};
+
+// ② サーバー上でのみ、BGM停止を防ぐための高度な音声データを読み込む
+async function preloadAudio(url) {
+    try {
+        // fileプロトコル（ローカル）の場合はセキュリティエラーになるためスキップ
+        if (window.location.protocol === 'file:') return;
+        
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffers[url] = { loaded: false, raw: arrayBuffer, buffer: null };
+    } catch (e) {
+        console.log("Web Audio用ファイルの取得をスキップしました");
+    }
+}
+
+// 読み込み開始
+[seMove, seInput, seDelete, seClear, seError, seButton].forEach(url => preloadAudio(url));
+
+// ③ 再生処理（環境に合わせて自動で切り替え）
+async function playSE(audioUrl) {
+    if (!isSoundEnabled || !audioUrl) return;
+
+    // もしローカル環境で遊んでいる場合、または高度な音声データが無い場合はバックアップ（従来のAudio）で鳴らす
+    if (window.location.protocol === 'file:' || !audioBuffers[audioUrl]) {
+        const fallback = fallbackAudios[audioUrl];
+        if (fallback) {
+            fallback.currentTime = 0;
+            fallback.play().catch(e => console.log("SE再生ブロック:", e));
+        }
+        return;
+    }
+
+    // --- 以降はサーバー（スマホやPCのブラウザ）で遊ぶ時のBGM停止対策処理 ---
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
+
+        const soundData = audioBuffers[audioUrl];
+        if (!soundData.loaded && soundData.raw) {
+            soundData.buffer = await audioCtx.decodeAudioData(soundData.raw);
+            soundData.loaded = true;
+            delete soundData.raw;
+        }
+        if (!soundData.buffer) return;
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = soundData.buffer;
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.5;
+        source.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        source.start(0);
+        
+    } catch (e) {
+        // 万が一エラーが起きた場合の最終バックアップ
+        const fallback = fallbackAudios[audioUrl];
+        if (fallback) {
+            fallback.currentTime = 0;
+            fallback.play().catch(err => console.log(err));
+        }
     }
 }
 
