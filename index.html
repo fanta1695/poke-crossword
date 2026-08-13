@@ -160,12 +160,40 @@
            ゲーム画面
            ========================================= */
         #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
-        #top-controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        /* 上部ボタンエリア（元の状態に戻す） */
+        #top-controls { 
+            margin-bottom: 20px; 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            width: 100%; 
+        }
+
+        /* タイマーとステータスをカギ箱(400px)の中央上に配置 */
+        #status-container { 
+            display: flex; 
+            justify-content: center; /* ★中央寄せ */
+            align-items: center;
+            gap: 15px; /* メッセージとタイマーの間隔 */
+            width: 400px; 
+            max-width: 100%; 
+            margin-bottom: 8px; /* カギ箱との間隔 */
+            box-sizing: border-box; 
+            min-height: 20px; 
+        }
+
+        #status { font-weight: 600; font-size: 14px; color: var(--text-main); }
         
-        #status-container { display: flex; gap: 20px; align-items: center; justify-content: center; margin-bottom: 20px; }
-        #status { font-weight: 600; color: var(--text-main); }
-        #timer { font-size: 24px; font-weight: bold; font-family: ui-monospace, monospace; color: var(--text-main); display: none; }
-        
+        #timer { 
+            font-size: 16px; 
+            font-weight: bold; 
+            font-family: ui-monospace, monospace; 
+            color: var(--text-muted); 
+            display: none; 
+            letter-spacing: 1px; 
+        }
+
         #game-container { display: flex; gap: 30px; align-items: center; justify-content: center; flex-direction: column; width: 100%; max-width: 1000px; }
         #board-area { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: max-content; }
 
@@ -498,16 +526,17 @@
             <button id="share-btn" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">シェア</button>
             <button id="giveup-btn" class="btn btn-danger" style="font-size: 14px; padding: 8px 16px; display: none;">ギブアップ</button>
         </div>
-        
-        <div id="status-container">
-            <div id="status"></div>
-            <div id="timer">00:00</div>
-        </div>
 
         <div id="game-container">
             <input type="text" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             
             <div id="board-area">
+
+                <div id="status-container">
+                    <div id="status"></div>
+                    <div id="timer">00:00</div>
+                </div>
+
                 <div id="active-clue-display" style="display: none;">マスをタップしてカギを表示</div>
                 
                 <div class="board-scroll-wrapper">
