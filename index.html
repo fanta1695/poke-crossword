@@ -360,6 +360,39 @@
             --x-bg: #ffffff;
             --x-text: #000000;
         }
+
+        /* =========================================
+           カギリストのレイアウト（スマホ: タブ / PC: 横並び）
+           ========================================= */
+        /* カード全体のスクロールを止め、タブを上部に固定する */
+        .clues-card { overflow-y: hidden !important; }
+
+        /* タイトル画面と同じデザインのタブUI */
+        .clue-tab-container { display: flex; background: var(--btn-secondary-bg); border-radius: 10px; padding: 4px; margin-bottom: 5px; width: 100%; box-sizing: border-box; flex-shrink: 0; }
+        .clue-tab-btn { flex: 1; padding: 8px 0; font-size: 14px; font-weight: 600; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .clue-tab-btn.active { background-color: var(--surface); color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* リストの並び制御 */
+        #clue-lists-wrapper { display: flex; flex-direction: column; width: 100%; flex: 1; min-height: 0; }
+        
+        /* スマホ時のデフォルト表示 */
+        .clue-list { display: none; flex-direction: column; flex: 1; min-height: 0; }
+        .clue-list.active { display: flex; }
+        .clue-list h3 { display: none; flex-shrink: 0; } 
+        
+        /* 各リストの独立スクロールとカスタムスクロールバー（他のリストと同じ太さ・色に統一） */
+        .clue-list ul { overflow-y: auto; flex: 1; padding-right: 5px; margin-bottom: 0; min-height: 0; }
+        .clue-list ul::-webkit-scrollbar { width: 6px; }
+        .clue-list ul::-webkit-scrollbar-track { background: transparent; }
+        .clue-list ul::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+        /* PC時（画面幅900px以上）のレイアウト */
+        @media (min-width: 900px) {
+            .clue-tab-container { display: none; } 
+            #clue-lists-wrapper { flex-direction: row; gap: 20px; } 
+            .clue-list { display: flex !important; } 
+            .clue-list h3 { display: block; } 
+        }
     </style>
 </head>
 <body>
@@ -497,18 +530,27 @@
             <div id="clues-container" style="display: none;">
                 <!-- カギのリスト部分（白いカード） -->
                 <div class="clues-card">
-                    <div class="clue-list" id="clues-across">
-                        <h3>ヨコのカギ</h3>
-                        <ul></ul>
+                    <!-- ▼▼▼ 追加：スマホ用のタブボタン ▼▼▼ -->
+                    <div class="clue-tab-container">
+                        <button class="clue-tab-btn active" data-dir="H">ヨコ</button>
+                        <button class="clue-tab-btn" data-dir="V">タテ</button>
                     </div>
-                    <div class="clue-list" id="clues-down">
-                        <h3>タテのカギ</h3>
-                        <ul></ul>
+
+                    <!-- ▼▼▼ 変更：リストを横並びにするためのラッパー ▼▼▼ -->
+                    <div id="clue-lists-wrapper">
+                        <div class="clue-list active" id="clues-across">
+                            <h3>ヨコのカギ</h3>
+                            <ul></ul>
+                        </div>
+                        <div class="clue-list" id="clues-down">
+                            <h3>タテのカギ</h3>
+                            <ul></ul>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- パズルのメタ情報（カギ一覧の外側・下に配置） -->
-                <div id="puzzle-meta" style="display: none; align-self: flex-end; width: max-content; min-width: 240px; max-width: 100%; font-size: 13px; color: var(--text-main); line-height: 1.6; text-align: left; background: var(--surface-hover); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box;"></div>
+                <div id="puzzle-meta" style="display: none; align-self: flex-end; width: max-content; ... "></div>
             </div>
         </div>
     </div>

@@ -55,18 +55,19 @@ const updateHighlight = () => {
             if (clueLi) {
                 clueLi.classList.add('active');
                 
-                const cluesCard = document.querySelector('.clues-card');
-                if (cluesCard) {
-                    const cardRect = cluesCard.getBoundingClientRect();
+                // スクロール対象をカード全体からリスト(ul)に変更
+                const scrollContainer = clueLi.closest('ul');
+                if (scrollContainer) {
+                    const containerRect = scrollContainer.getBoundingClientRect();
                     const clueRect = clueLi.getBoundingClientRect();
                     
                     // カギが上に見切れている場合
-                    if (clueRect.top < cardRect.top) {
-                        cluesCard.scrollBy({ top: clueRect.top - cardRect.top - 8, behavior: 'smooth' });
+                    if (clueRect.top < containerRect.top) {
+                        scrollContainer.scrollBy({ top: clueRect.top - containerRect.top - 8, behavior: 'smooth' });
                     } 
                     // カギが下に見切れている場合
-                    else if (clueRect.bottom > cardRect.bottom) {
-                        cluesCard.scrollBy({ top: clueRect.bottom - cardRect.bottom + 8, behavior: 'smooth' });
+                    else if (clueRect.bottom > containerRect.bottom) {
+                        scrollContainer.scrollBy({ top: clueRect.bottom - containerRect.bottom + 8, behavior: 'smooth' });
                     }
                 }
                 
@@ -87,6 +88,19 @@ const updateHighlight = () => {
 
     if (currentClueHtml) {
         activeClueDisplay.innerHTML = currentClueHtml;
+    }
+
+    document.querySelectorAll('.clue-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.dir === activeDir) btn.classList.add('active');
+    });
+    document.querySelectorAll('.clue-list').forEach(w => w.classList.remove('active'));
+    if (activeDir === 'H') {
+        const hList = document.getElementById('clues-across');
+        if (hList) hList.classList.add('active');
+    } else {
+        const vList = document.getElementById('clues-down');
+        if (vList) vList.classList.add('active');
     }
 };
 
@@ -595,4 +609,33 @@ gameScreen.addEventListener('click', (e) => {
     if (activeX !== null && e.target.tagName !== 'BUTTON' && shareModal.style.display !== 'flex' && messageModal.style.display !== 'flex') {
         hiddenInput.focus();
     }
+});
+
+// ==========================================
+// スマホ用：カギのタブ切り替え制御
+// ==========================================
+document.querySelectorAll('.clue-tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.clue-tab-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        const targetDir = e.target.dataset.dir;
+        document.querySelectorAll('.clue-list').forEach(w => w.classList.remove('active'));
+        
+        if (targetDir === 'H') {
+            document.getElementById('clues-across').classList.add('active');
+        } else {
+            document.getElementById('clues-down').classList.add('active');
+        }
+        
+        // 盤面にカーソルがあれば入力方向も連動
+        if (activeX !== null && activeY !== null && currentGameData) {
+            const cellData = currentGameData.grid[activeY][activeX];
+            if ((targetDir === 'H' && cellData.countH > 0) || (targetDir === 'V' && cellData.countV > 0)) {
+                activeDir = targetDir;
+                updateHighlight();
+            }
+        }
+        if (typeof playSE === 'function' && typeof seButton !== 'undefined') playSE(seButton);
+    });
 });
