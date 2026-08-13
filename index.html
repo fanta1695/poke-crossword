@@ -263,8 +263,19 @@
         #clues-container { display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; width: 100%; }
         
         /* 白いカード部分のデザイン */
-        .clues-card { display: flex; flex-direction: column; gap: 20px; background: var(--surface); padding: 24px; border-radius: 16px; box-sizing: border-box; width: 100%; max-height: 50vh; overflow-y: auto; }
-        
+        .clues-card { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; /* ★隙間を少し詰める(20px→12px) */
+            background: var(--surface); 
+            padding: 16px; /* ★内側の余白を少し削ってリストの領域を広げる(24px→16px) */
+            border-radius: 16px; 
+            box-sizing: border-box; 
+            width: 100%; 
+            max-height: 65vh; /* ★最大高さを画面の50%から「65%」に増やす */
+            overflow-y: auto; 
+        }
+                
         @media (min-width: 900px) {
             #game-container { flex-direction: row; align-items: flex-start; max-width: 1200px; }
             #board-area { flex: 0 0 auto; width: auto; position: sticky; top: 20px; }
