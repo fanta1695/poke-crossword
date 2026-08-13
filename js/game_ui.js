@@ -193,9 +193,11 @@ function handleBackspace() {
 // 盤面とカギの描画
 // ==========================================
 const renderBoard = (dfs) => {
+    updateCellSize(dfs.width, dfs.height);
+
     boardEl.innerHTML = ""; 
-    boardEl.style.gridTemplateColumns = `repeat(${dfs.width}, 40px)`;
-    boardEl.style.gridTemplateRows = `repeat(${dfs.height}, 40px)`;
+    boardEl.style.gridTemplateColumns = `repeat(${dfs.width}, ${currentCellSize}px)`;
+    boardEl.style.gridTemplateRows = `repeat(${dfs.height}, ${currentCellSize}px)`;
 
     for (let y = 0; y < dfs.height; y++) {
         for (let x = 0; x < dfs.width; x++) {

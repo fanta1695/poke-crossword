@@ -588,7 +588,8 @@ function startLoadingAnimation(targetSize) {
     boardEl.style.gridTemplateColumns = "1fr";
     boardEl.style.gridTemplateRows = "1fr";
     
-    const sizePx = Math.max(targetSize * 40, 200); 
+    let tempSize = window.innerWidth > 600 ? Math.min(40, Math.max(26, Math.floor((window.innerHeight - 350) / targetSize))) : 40;
+    const sizePx = Math.max(targetSize * tempSize, 200);
     
     boardEl.innerHTML = `
         <div class="loading-board" style="width: ${sizePx}px; height: ${sizePx}px;">
@@ -786,10 +787,10 @@ submitBtn.addEventListener('click', () => {
             errBox.id = `errbox-${kid}`;
             errBox.classList.add('word-error-box');
             
-            errBox.style.left = (meta.x * 40) + 'px';
-            errBox.style.top = (meta.y * 40) + 'px';
-            errBox.style.width = (meta.dir === 'H' ? meta.length * 40 : 40) + 'px';
-            errBox.style.height = (meta.dir === 'V' ? meta.length * 40 : 40) + 'px';
+            errBox.style.left = (meta.x * currentCellSize) + 'px';
+            errBox.style.top = (meta.y * currentCellSize) + 'px';
+            errBox.style.width = (meta.dir === 'H' ? meta.length * currentCellSize : currentCellSize) + 'px';
+            errBox.style.height = (meta.dir === 'V' ? meta.length * currentCellSize : currentCellSize) + 'px';
             
             boardEl.appendChild(errBox);
         });
@@ -1009,7 +1010,8 @@ const tryGenerate = (targetSize, targetMinWords, hintMode, allowedGens, difficul
                 tryGenerate(targetSize, targetMinWords, hintMode, allowedGens, difficulty, attempt + 1, maxAttempts, dailySeedStr, genId); 
             } else {
                 stopLoadingAnimation();
-                const sizePx = Math.max(targetSize * 40, 200);
+                let tempSize = window.innerWidth > 600 ? Math.min(40, Math.max(26, Math.floor((window.innerHeight - 350) / targetSize))) : 40;
+                const sizePx = Math.max(targetSize * tempSize, 200);
                 
                 let errorBoardText = "";
                 let errorModalText = "";

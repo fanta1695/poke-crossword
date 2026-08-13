@@ -99,3 +99,47 @@ function playSE(audioObj) {
         audioObj.play().catch(e => console.log("SE再生ブロック:", e));
     }
 }
+
+// ==========================================
+// マスサイズの自動計算（PC・スマホハイブリッド）
+// ==========================================
+let currentCellSize = 40; // 現在のマスの基本サイズ
+
+function updateCellSize(boardWidth, boardHeight) {
+    if (!boardWidth || !boardHeight) return;
+    
+    if (window.innerWidth <= 600) {
+        // スマホ画面幅（600px以下）なら、タップしやすさ優先で従来通り40px固定
+        currentCellSize = 40;
+    } else {
+        // PC・タブレットなら、画面に収まるように計算
+        const availableWidth = window.innerWidth * 0.9; 
+        const availableHeight = window.innerHeight - 180; 
+        
+        const sizeByWidth = Math.floor(availableWidth / boardWidth);
+        const sizeByHeight = Math.floor(availableHeight / boardHeight);
+        
+        let calculatedSize = Math.min(sizeByWidth, sizeByHeight);
+        currentCellSize = Math.max(26, Math.min(40, calculatedSize));
+    }
+
+    // CSSへ変数を渡す
+    document.documentElement.style.setProperty('--cell-size', `${currentCellSize}px`);
+    document.documentElement.style.setProperty('--cell-font-size', `${Math.floor(currentCellSize * 0.5)}px`);
+    document.documentElement.style.setProperty('--cell-num-size', `${Math.floor(currentCellSize * 0.28)}px`);
+}
+
+// 画面サイズ変更時の再計算
+window.addEventListener('resize', () => {
+    if (currentGameData && gameScreen.style.display === 'flex') {
+        updateCellSize(currentGameData.width, currentGameData.height);
+        
+        if (typeof boardEl !== 'undefined' && boardEl) {
+            boardEl.style.gridTemplateColumns = `repeat(${currentGameData.width}, ${currentCellSize}px)`;
+            boardEl.style.gridTemplateRows = `repeat(${currentGameData.height}, ${currentCellSize}px)`;
+        }
+        
+        document.querySelectorAll('.word-error-box').forEach(el => el.remove());
+        document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    }
+});

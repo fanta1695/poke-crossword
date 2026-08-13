@@ -203,8 +203,8 @@
         }
 
         /* ダークモードでも文字が黒くなるように固定 */
-        .cell-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: 700; color: var(--cell-text); pointer-events: none; }
-        .cell-number { position: absolute; top: 2px; left: 3px; font-size: 11px; font-weight: 600; color: var(--cell-number); pointer-events: none; }
+        .cell-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: var(--cell-font-size, 20px); font-weight: 700; color: var(--cell-text); pointer-events: none; }
+        .cell-number { position: absolute; top: 2px; left: 3px; font-size: var(--cell-num-size, 11px); font-weight: 600; color: var(--cell-number); pointer-events: none; }
 
         #active-clue-display {
             width: 400px;
