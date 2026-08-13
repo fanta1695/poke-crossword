@@ -275,15 +275,23 @@
             max-height: 65vh; /* ★最大高さを画面の50%から「65%」に増やす */
             overflow-y: auto; 
         }
-                
+
         @media (min-width: 900px) {
             #game-container { flex-direction: row; align-items: flex-start; max-width: 1200px; }
             #board-area { flex: 0 0 auto; width: auto; position: sticky; top: 20px; }
             
-            /* カギ全体を画面の高さに合わせて追従（sticky）させる */
-            #clues-container { flex: 1; min-width: 320px; height: calc(100vh - 40px); position: sticky; top: 20px; }
-            /* カギリストが余白をすべて埋め、カード内でのみスクロールするように設定 */
-            .clues-card { flex: 1; max-height: none; overflow-y: auto; }
+            /* カギ全体を画面の高さに制限しつつ、中身が少ない時はキュッと縮ませる */
+            #clues-container { 
+                flex: 1; 
+                min-width: 320px; 
+                max-height: calc(100vh - 40px); /* ★ここを height から max-height に変更 */
+                position: sticky; 
+                top: 20px; 
+            }
+            /* カードも中身のサイズに合わせて自然に縮むように設定 */
+            .clues-card { 
+                flex: 1; 
+            }
         }
         
         .clue-list { flex: 1; }
