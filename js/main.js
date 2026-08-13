@@ -128,10 +128,77 @@ function saveGameState() {
         activeDir: activeDir
     };
     localStorage.setItem('pokemonCrosswordState', JSON.stringify(state));
+
+    if (currentModeName === "今日の問題") {
+        const dateStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+        state.savedDate = dateStr; 
+        localStorage.setItem('pokemonCrosswordDailyState', JSON.stringify(state));
+    }
 }
 
 function clearGameState() {
     localStorage.removeItem('pokemonCrosswordState');
+}
+
+function restoreStateObj(state) {
+    currentGameData = state.currentGameData;
+    
+    if (!currentGameData.difficulty) currentGameData.difficulty = 'normal';
+    if (!currentGameData.allowedGens) currentGameData.allowedGens = [1,2,3,4,5,6,7,8,9];
+    if (!currentGameData.hintMode) currentGameData.hintMode = { type: 'normal' };
+
+    currentModeName = state.currentModeName;
+    useTimer = state.useTimer;
+    
+    isCleared = state.isCleared;
+    isGivenUp = state.isGivenUp;
+    cellErrorCounts = state.cellErrorCounts || {};
+    totalSubmitErrors = state.totalSubmitErrors || 0;
+    activeX = state.activeX;
+    activeY = state.activeY;
+    activeDir = state.activeDir || 'H';
+    
+    if (useTimer) {
+        if (isCleared || isGivenUp) {
+            clearTimeMs = state.elapsedMs;
+        } else {
+            playStartTime = Date.now() - state.elapsedMs;
+        }
+    }
+
+    titleScreen.style.display = 'none';
+    const trc = document.getElementById('title-rule-container');
+    if (trc) trc.style.display = 'none';
+    gameScreen.style.display = 'flex';
+    statusEl.style.display = 'none';
+
+    updatePuzzleMeta(currentGameData);
+    renderBoard(currentGameData);
+    renderClues(currentGameData);
+
+    for (const key in state.userInputs) {
+        const [x, y] = key.split(',');
+        const textEl = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"] .cell-text`);
+        if (textEl) textEl.textContent = state.userInputs[key];
+    }
+
+    if (isCleared || isGivenUp) {
+        submitBtn.style.display = "none";
+        giveupBtn.style.display = "none";
+        activeClueDisplay.style.display = "flex";
+        if (isCleared) {
+            activeClueDisplay.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted);">クリアおめでとうございます！</div>';
+        } else {
+            activeClueDisplay.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted);">ギブアップしました</div>';
+        }
+        activeX = null; activeY = null;
+    } else {
+        submitBtn.style.display = "block";
+        giveupBtn.style.display = "block";
+        activeClueDisplay.style.display = "flex";
+        updateHighlight();
+        if (useTimer) startTimer();
+    }
 }
 
 function restoreGameState() {
@@ -140,64 +207,7 @@ function restoreGameState() {
 
     try {
         const state = JSON.parse(savedState);
-        currentGameData = state.currentGameData;
-        
-        if (!currentGameData.difficulty) currentGameData.difficulty = 'normal';
-        if (!currentGameData.allowedGens) currentGameData.allowedGens = [1,2,3,4,5,6,7,8,9];
-        if (!currentGameData.hintMode) currentGameData.hintMode = { type: 'normal' };
-
-        currentModeName = state.currentModeName;
-        useTimer = state.useTimer;
-        
-        isCleared = state.isCleared;
-        isGivenUp = state.isGivenUp;
-        cellErrorCounts = state.cellErrorCounts || {};
-        totalSubmitErrors = state.totalSubmitErrors || 0;
-        activeX = state.activeX;
-        activeY = state.activeY;
-        activeDir = state.activeDir || 'H';
-        
-        if (useTimer) {
-            if (isCleared || isGivenUp) {
-                clearTimeMs = state.elapsedMs;
-            } else {
-                playStartTime = Date.now() - state.elapsedMs;
-            }
-        }
-
-        titleScreen.style.display = 'none';
-        const trc = document.getElementById('title-rule-container');
-        if (trc) trc.style.display = 'none';
-        gameScreen.style.display = 'flex';
-        statusEl.style.display = 'none';
-
-        updatePuzzleMeta(currentGameData);
-        renderBoard(currentGameData);
-        renderClues(currentGameData);
-
-        for (const key in state.userInputs) {
-            const [x, y] = key.split(',');
-            const textEl = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"] .cell-text`);
-            if (textEl) textEl.textContent = state.userInputs[key];
-        }
-
-        if (isCleared || isGivenUp) {
-            submitBtn.style.display = "none";
-            giveupBtn.style.display = "none";
-            activeClueDisplay.style.display = "flex";
-            if (isCleared) {
-                activeClueDisplay.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted);">クリアおめでとうございます！</div>';
-            } else {
-                activeClueDisplay.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted);">ギブアップしました</div>';
-            }
-            activeX = null; activeY = null;
-        } else {
-            submitBtn.style.display = "block";
-            giveupBtn.style.display = "block";
-            activeClueDisplay.style.display = "flex";
-            updateHighlight();
-            if (useTimer) startTimer();
-        }
+        restoreStateObj(state); // 共通関数を呼び出す
     } catch(e) {
         console.error("セーブデータの復元に失敗しました", e);
         clearGameState();
@@ -819,7 +829,12 @@ submitBtn.addEventListener('click', () => {
 // 画面遷移とパズル生成
 // ==========================================
 backBtn.addEventListener('click', () => {
-    showMessageModal("確認", "ゲームをやめてタイトルに戻りますか？<br>入力した内容はすべて失われます。", true, (res) => {
+    let msg = "ゲームをやめてタイトルに戻りますか？<br>入力した内容はすべて失われます。";
+    if (currentModeName === "今日の問題") {
+        msg = "ゲームをやめてタイトルに戻りますか？<br><span style='color: var(--primary); font-size: 13px;'>※今日の問題の進行状況は、日付が変わるまで自動で保存されます。</span>";
+    }
+
+    showMessageModal("確認", msg, true, (res) => {
         if (res) {
             currentGenerationId++; 
             startDailyBtn.disabled = false;
@@ -1042,7 +1057,25 @@ startDailyBtn.addEventListener('click', () => {
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     const dailySeedStr = `${yyyy}${mm}${dd}`;
+
+    const todayStrForCheck = `${yyyy}-${today.getMonth() + 1}-${today.getDate()}`;
     
+    const dailySaved = localStorage.getItem('pokemonCrosswordDailyState');
+    if (dailySaved) {
+        try {
+            const state = JSON.parse(dailySaved);
+            if (state.savedDate === todayStrForCheck) {
+                // セーブデータが今日の分であれば、自動生成せずに復元する
+                restoreStateObj(state);
+                saveGameState(); // 現在の進行中ゲームとしても登録
+                startDailyBtn.disabled = false;
+                return; // ここで処理を終了し、生成処理には進まない
+            }
+        } catch(e) {
+            console.error("今日の問題セーブデータ復元エラー", e);
+        }
+    }
+
     currentModeName = "今日の問題";
     currentGenerationId++;
     
