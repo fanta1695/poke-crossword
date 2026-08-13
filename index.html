@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex, nofollow">
+    <title>ポケモン クロスワード</title>
+
+    <!-- アイコン -->
+    <link rel="icon" type="image/png" href="./img/favicon.png">
+
+    <!-- スマホアプリ（PWA）用設定 -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#007aff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ポケクロ">
+    <link rel="apple-touch-icon" href="./img/icon-192.png">
+
+    <style>
+        /* =========================================
+           ベース・タイポグラフィ（カラーパレット）
+           ========================================= */
+        :root {
+            /* アプリ全体のUIカラー */
+            --primary: #007aff;
+            --primary-hover: #0062cc;
+            --success: #34c759;
+            --danger: #ff3b30;
+            --bg-color: #f2f4f7;
+            --surface: #ffffff;
+            --surface-hover: #f8fbff;
+            --surface-active: #f2f2f7;
+            --text-main: #333333;
+            --text-muted: #8e8e93;
+            --text-primary: #0d47a1;
+            --border-color: #d1d5db;
+            --border-light: #e5e5ea;
+            --border-primary: #bbdefb;
+            --error-bg: #ffebee;
+            --error-border: #ffcdd2;
+            --input-bg: #f9fafb;
+            --btn-secondary-bg: #e5e5ea;
+            --btn-secondary-hover: #d1d1d6;
+            --x-bg: #000000;
+            --x-text: #ffffff;
+            --clue-active-bg: #e3f2fd;
+
+            /* 盤面専用カラー（ダークモードでも変化しない） */
+            --board-bg: #4a4a4a;
+            --cell-bg: #ffffff;
+            --cell-text: #333333;
+            --cell-number: #757575;     /* 左上の小さい数字も少し濃くして視認性アップ */
+            --cell-border: #d1d5db;     /* マスの境界線も少しハッキリさせる */
+            --cell-active: #ffeb3b;     /* より鮮やかな黄色に */
+            --cell-highlight: #bbdefb;  /* より鮮やかな水色に */
+        }
+
+        /* ダークモード時のUIカラー上書き */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #0a84ff;
+                --primary-hover: #0062cc;
+                --success: #32d74b;
+                --danger: #ff453a;
+                --bg-color: #000000;
+                --surface: #1c1c1e;
+                --surface-hover: #2c2c2e;
+                --surface-active: #3a3a3c;
+                --text-main: #f2f2f7;
+                --text-muted: #98989d;
+                --text-primary: #a6d8ff;
+                --border-color: #38383a;
+                --border-light: #38383a;
+                --border-primary: #298cff;
+                --clue-active-bg: #112a46;
+                --error-bg: #3b0000;
+                --error-border: #ff3b30;
+                --input-bg: #2c2c2e;
+                --btn-secondary-bg: #3a3a3c;
+                --btn-secondary-hover: #48484a;
+                --x-bg: #ffffff;
+                --x-text: #000000;
+            }
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        h1 { margin: 10px 0 30px; font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: 1px; text-align: center; }
+
+        /* =========================================
+           共通コンポーネント
+           ========================================= */
+        .btn { font-size: 16px; font-weight: 600; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; justify-content: center; align-items: center; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-secondary { background-color: var(--btn-secondary-bg); color: var(--text-main); }
+        .btn-secondary:hover { background-color: var(--btn-secondary-hover); }
+        .btn:disabled { background-color: var(--text-muted) !important; opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .card { background: var(--surface); padding: 30px; border-radius: 16px; width: 100%; max-width: 500px; box-sizing: border-box; }
+
+        /* =========================================
+           タイトル画面
+           ========================================= */
+        #title-screen { display: flex; flex-direction: column; align-items: stretch; width: 100%; }
+        
+        #tab-buttons { display: flex; background: var(--btn-secondary-bg); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: 100%; box-sizing: border-box; }
+        .tab-btn { flex: 1; padding: 10px 0; font-size: 15px; font-weight: 600; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background-color: var(--surface); color: var(--text-main); }
+        
+        .tab-content { display: none; text-align: center; width: 100%; box-sizing: border-box; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tab-content h2 { margin-top: 0; font-size: 22px; }
+        .tab-content p { color: var(--text-muted); line-height: 1.6; margin-bottom: 25px; font-size: 15px; }
+
+        .diff-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; text-align: left; max-width: 100%; box-sizing: border-box; }
+        .diff-options label { padding: 14px 16px; border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; }
+        .diff-options label:hover { border-color: var(--primary); background-color: var(--surface-hover); }
+        .diff-options input[type="radio"], .diff-options input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; }
+        
+        .section-title { margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+
+        #problem-id-input { width: 100%; padding: 14px; font-size: 16px; border: 2px solid var(--border-color); background-color: var(--input-bg); color: var(--text-main); border-radius: 10px; box-sizing: border-box; font-family: monospace; transition: border-color 0.2s; margin-bottom: 20px; }
+        #problem-id-input:focus { outline: none; border-color: var(--primary); }
+
+        .hint-checkboxes { display: flex; gap: 6px; width: 100%; }
+        .hint-checkboxes label { flex: 1; padding: 10px 2px; font-size: 12px; display: flex; justify-content: center; align-items: center; white-space: nowrap; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; box-sizing: border-box; }
+        .hint-checkboxes label:hover { border-color: var(--primary); background-color: var(--surface-hover); }
+        .hint-checkboxes input { margin-right: 4px; width: 14px; height: 14px; accent-color: var(--primary); }
+
+        /* 履歴リスト・カギリスト・各モーダル用スクロールバー */
+        #history-list::-webkit-scrollbar, .clues-card::-webkit-scrollbar, .rule-section::-webkit-scrollbar, #stats-scroll-area::-webkit-scrollbar, #about-scroll-area::-webkit-scrollbar, #settings-scroll-area::-webkit-scrollbar { width: 6px; }
+        #history-list::-webkit-scrollbar-track, .clues-card::-webkit-scrollbar-track, .rule-section::-webkit-scrollbar-track, #stats-scroll-area::-webkit-scrollbar-track, #about-scroll-area::-webkit-scrollbar-track, #settings-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        #history-list::-webkit-scrollbar-thumb, .clues-card::-webkit-scrollbar-thumb, .rule-section::-webkit-scrollbar-thumb, #stats-scroll-area::-webkit-scrollbar-thumb, #about-scroll-area::-webkit-scrollbar-thumb, #settings-scroll-area::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+        
+        /* =========================================
+           ゲーム画面
+           ========================================= */
+        #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+        #top-controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        
+        #status-container { display: flex; gap: 20px; align-items: center; justify-content: center; margin-bottom: 20px; }
+        #status { font-weight: 600; color: var(--text-main); }
+        #timer { font-size: 24px; font-weight: bold; font-family: ui-monospace, monospace; color: var(--text-main); display: none; }
+        
+        #game-container { display: flex; gap: 30px; align-items: center; justify-content: center; flex-direction: column; width: 100%; max-width: 1000px; }
+        #board-area { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: max-content; }
+
+        .board-scroll-wrapper { width: 100%; overflow-x: auto; padding: 4px 0; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+
+        #board { position: relative; display: grid; background-color: var(--board-bg); border: 4px solid var(--board-bg); border-radius: 4px; -webkit-tap-highlight-color: transparent; margin: 0 auto; width: max-content; }
+        
+        .cell.white { background-color: var(--cell-bg); border: 1px solid var(--cell-border); position: relative; cursor: pointer; transition: background-color 0.1s; }
+        .cell.white.active { 
+            background-color: var(--cell-active) !important; 
+            box-shadow: inset 0 0 0 2px #f57c00; /* 内側に濃いオレンジ色の太枠を追加 */
+            z-index: 2; /* 枠線をきれいに表示するため */
+        }
+        .cell.white.highlight { 
+            background-color: var(--cell-highlight); 
+            border-color: #64b5f6; /* 枠線を少し濃い青色にしてハッキリさせる */
+            z-index: 1; /* 隣の通常マスの枠線より上に表示させる */
+        }
+
+        .word-error-box { 
+            position: absolute; 
+            border: 2px solid var(--danger); /* 線を少し細くしてスタイリッシュに */
+            box-shadow: 0 0 10px var(--danger); /* ふんわりとした赤い発光（グロウ効果） */
+            box-sizing: border-box; 
+            border-radius: 6px; /* 角の丸みを少し強くする */
+            pointer-events: none; 
+            z-index: 20; 
+            animation: shakeError 0.4s ease-in-out; /* 拡大縮小をやめてシェイクアニメーションに */
+        }
+        /* 左右にブルブルッと震えるアニメーション */
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+
+        /* ダークモードでも文字が黒くなるように固定 */
+        .cell-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: 700; color: var(--cell-text); pointer-events: none; }
+        .cell-number { position: absolute; top: 2px; left: 3px; font-size: 11px; font-weight: 600; color: var(--cell-number); pointer-events: none; }
+
+        #active-clue-display {
+            width: 400px;
+            max-width: 100%;
+            background-color: var(--surface-hover);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            box-sizing: border-box;
+            height: 70px; /* ★min-heightを削除し、heightを固定値に（2行分が収まるサイズ。必要に応じて数値を調整してください） */
+            display: flex; /* ★垂直中央揃えにするために必要 */
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        #action-container { display: flex; width: 400px; max-width: 100%; margin-top: 5px; gap: 15px; align-items: center; justify-content: center; }
+        #special-keys { display: none; flex-wrap: wrap; gap: 4px; width: 120px; flex-shrink: 0; align-content: center; }
+        .sp-key { flex: 1 1 30%; font-size: 13px; font-weight: 700; padding: 0; height: 28px; background-color: var(--surface); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
+        .sp-key:active { transform: translateY(1px); background-color: var(--surface-active); }
+
+        #submit-btn { display: none; padding: 12px 24px; font-size: 16px; box-sizing: border-box; }
+
+        /* カギとメタ情報を包む透明なラッパー */
+        #clues-container { display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; width: 100%; }
+        
+        /* 白いカード部分のデザイン */
+        .clues-card { display: flex; flex-direction: column; gap: 20px; background: var(--surface); padding: 24px; border-radius: 16px; box-sizing: border-box; width: 100%; max-height: 50vh; overflow-y: auto; }
+        
+        @media (min-width: 900px) {
+            #game-container { flex-direction: row; align-items: flex-start; max-width: 1200px; }
+            #board-area { flex: 0 0 auto; width: auto; position: sticky; top: 20px; }
+            
+            /* カギ全体を画面の高さに合わせて追従（sticky）させる */
+            #clues-container { flex: 1; min-width: 320px; height: calc(100vh - 40px); position: sticky; top: 20px; }
+            /* カギリストが余白をすべて埋め、カード内でのみスクロールするように設定 */
+            .clues-card { flex: 1; max-height: none; overflow-y: auto; }
+        }
+        
+        .clue-list { flex: 1; }
+        .clue-list h3 { margin-top: 0; font-size: 16px; color: var(--text-main); border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; }
+        .clue-list ul { list-style-type: none; padding: 0; margin: 0; }
+        .clue-list li { padding: 8px 10px; font-size: 14px; cursor: pointer; border-radius: 8px; border: 1px solid transparent; transition: 0.1s; line-height: 1.4; margin-bottom: 4px; }
+        .clue-list li:hover { background-color: var(--surface-active); }
+        .clue-list li.active { background-color: var(--clue-active-bg); border-color: var(--border-primary); font-weight: 600; color: var(--text-primary); }
+        .clue-list li.error { background-color: var(--error-bg); border-color: var(--error-border); color: var(--danger); }
+        .clue-list span.num { font-weight: 700; display: inline-block; width: 22px; color: var(--text-muted); }
+        .clue-list li.active span.num { color: var(--text-primary); }
+        
+        #hidden-input { position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none; }
+
+        /* =========================================
+           ローディング・生成中画面（フリーズ回避）
+           ========================================= */       
+        .loading-board {
+            background-color: var(--board-bg);
+            border: 4px solid var(--board-bg);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+        .loading-board .pulse-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .loading-spinner {
+            width: 36px;
+            height: 36px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* モーダル類 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--surface); padding: 30px; border-radius: 16px; width: 90%; max-width: 400px; box-sizing: border-box; text-align: center; }
+        
+        /* モーダルのタブ共通（シェア用とルール用のクラスを分ける） */
+        .modal-tabs { display: flex; background: var(--btn-secondary-bg); border-radius: 8px; padding: 4px; margin-bottom: 24px; }
+        .modal-tab, .rule-tab { flex: 1; padding: 10px 0; background: transparent; border: none; cursor: pointer; font-weight: 600; color: var(--text-muted); border-radius: 6px; transition: 0.2s; }
+        .modal-tab.active, .rule-tab.active { background: var(--surface); color: var(--text-main); }
+        .modal-section, .rule-section { display: none; text-align: left; }
+        .modal-section.active, .rule-section.active { display: block; animation: fadeIn 0.3s; }
+        
+        .modal-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        #share-id-display, #share-result-text { width: 100%; padding: 12px; box-sizing: border-box; font-family: inherit; font-size: 15px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--input-bg); color: var(--text-main); }
+    
+        /* ダークモード・ライトモード手動切り替え用（全変数を上書きして漏れを防ぐ） */
+        body.theme-light {
+            --primary: #007aff;
+            --primary-hover: #0062cc;
+            --success: #34c759;
+            --danger: #ff3b30;
+            --bg-color: #f2f4f7;
+            --surface: #ffffff;
+            --surface-hover: #f8fbff;
+            --surface-active: #f2f2f7;
+            --text-main: #333333;
+            --text-muted: #8e8e93;
+            --text-primary: #0d47a1;
+            --border-color: #d1d5db;
+            --border-light: #e5e5ea;
+            --border-primary: #bbdefb;
+            --error-bg: #ffebee;
+            --error-border: #ffcdd2;
+            --input-bg: #f9fafb;
+            --btn-secondary-bg: #e5e5ea;
+            --btn-secondary-hover: #d1d1d6;
+            --x-bg: #000000;
+            --x-text: #ffffff;
+            --clue-active-bg: #e3f2fd;
+        }
+
+        body.theme-dark {
+            --primary: #0a84ff;
+            --primary-hover: #0062cc;
+            --success: #32d74b;
+            --danger: #ff453a;
+            --bg-color: #000000;
+            --surface: #1c1c1e;
+            --surface-hover: #2c2c2e;
+            --surface-active: #3a3a3c;
+            --text-main: #f2f2f7;
+            --text-muted: #98989d;
+            --text-primary: #a6d8ff;
+            --border-color: #38383a;
+            --border-light: #38383a;
+            --border-primary: #298cff;
+            --clue-active-bg: #112a46;
+            --error-bg: #3b0000;
+            --error-border: #ff3b30;
+            --input-bg: #2c2c2e;
+            --btn-secondary-bg: #3a3a3c;
+            --btn-secondary-hover: #48484a;
+            --x-bg: #ffffff;
+            --x-text: #000000;
+        }
+    </style>
+</head>
+<body>
+    <h1>ポケモン クロスワード</h1>
+    
+    <div id="title-rule-container" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; width: 100%; max-width: 500px;">
+        <button id="rule-btn-title" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">あそびかた</button>
+        <button id="stats-btn-title" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">きろく</button>
+        <button id="settings-btn-title" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">せってい</button>
+    </div>
+
+    <!-- 全体を包むラッパーに id="title-screen" を移動 -->
+    <div id="title-screen" style="align-items: center; width: 100%; display: flex; flex-direction: column;">
+        <div class="card">
+            <div id="tab-buttons">
+                <button class="tab-btn active" data-tab="daily">今日の問題</button>
+                <button class="tab-btn" data-tab="free">フリープレイ</button>
+                <button class="tab-btn" data-tab="id">IDから遊ぶ</button>
+            </div>
+
+            <div id="tab-daily" class="tab-content active">
+                <h2 id="daily-title">本日の問題</h2>
+                <p>難易度：<strong>ノーマル (5×5)</strong><br>
+                出題範囲：カントー / ジョウト / ホウエン / シンオウ / イッシュ</p>
+                <button id="start-daily-btn" class="btn btn-primary" style="width: 100%;">今日の問題に挑戦する！</button>
+            </div>
+
+            <div id="tab-free" class="tab-content">
+                <div class="diff-options">
+                    <div class="section-title">難易度</div>
+                    <label><input type="radio" name="difficulty" value="normal" checked> ノーマル (5×5)</label>
+                    <label><input type="radio" name="difficulty" value="super"> スーパー (最大8×8)</label>
+                    <label><input type="radio" name="difficulty" value="hyper"> ハイパー (最大11×11)</label>
+                    <label><input type="radio" name="difficulty" value="master"> マスター (最大15×15)</label>
+                </div>
+                
+                <div id="diff-description" style="font-size: 13px; color: var(--text-muted); margin-bottom: 25px; padding: 12px; background: var(--surface-hover); border: 1px solid var(--border-color); border-radius: 8px; line-height: 1.5; text-align: left;">
+                    サクサク遊べる初心者向け！<br>好きな地方を選んで、図鑑No・タイプ・特性から推理しよう。
+                </div>
+                
+                <div id="gen-options-container" class="diff-options" style="display: block;">
+                    <div class="section-title">出題地方（ノーマル・スーパー用）</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="1" checked> カントー</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="2" checked> ジョウト</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="3" checked> ホウエン</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="4" checked> シンオウ</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="5" checked> イッシュ</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="6" checked> カロス</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="7" checked> アローラ</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="8" checked> ガラル / ヒスイ</label>
+                        <label style="padding: 8px 12px; font-size: 14px;"><input type="checkbox" name="gen-type" value="9" checked> パルデア</label>
+                    </div>
+                </div>
+
+                <div id="hint-options-container" class="diff-options" style="display: none;">
+                    <div class="section-title">出題ヒント（マスター用）</div>
+                    <div class="hint-checkboxes">
+                        <label><input type="checkbox" name="hint-type" value="no" checked> 図鑑No</label>
+                        <label><input type="checkbox" name="hint-type" value="type" checked> タイプ</label>
+                        <label><input type="checkbox" name="hint-type" value="ability" checked> 特性</label>
+                        <label><input type="checkbox" name="hint-type" value="stats" checked> 種族値</label>
+                    </div>
+                </div>
+
+                <div class="diff-options">
+                    <label style="background: var(--surface-hover); border-color: var(--border-primary);"><input type="checkbox" id="timer-checkbox-free"> タイマーで時間を計る</label>
+                </div>
+
+                <button id="start-free-btn" class="btn btn-primary" style="width: 100%;">新しく自動生成して遊ぶ</button>
+            </div>
+
+            <div id="tab-id" class="tab-content">
+                <h2 style="margin-bottom: 20px;">問題IDから遊ぶ</h2>
+                <input type="text" id="problem-id-input" placeholder="IDを入力">
+                
+                <div class="diff-options">
+                    <label style="background: var(--surface-hover); border-color: var(--border-primary);"><input type="checkbox" id="timer-checkbox-id"> タイマーで時間を計る</label>
+                </div>
+
+                <button id="start-id-btn" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">この問題で遊ぶ</button>
+
+                <div style="text-align: left; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                    <div class="section-title">最近遊んだ問題</div>
+                    <div id="history-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 4px;">
+                        <!-- JSで履歴が挿入されます -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <!-- このサイトについて ボタン -->
+        <div style="margin-top: 20px; text-align: center; width: 100%; max-width: 500px;">
+            <button id="about-btn-title" class="btn btn-secondary" style="font-size: 13px; padding: 6px 16px; border-radius: 20px; background-color: transparent; border: 1px solid var(--border-color);">このサイトについて</button>
+        </div>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="game-screen">
+        <div id="top-controls">
+            <button id="back-btn" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">やめる</button>
+            <button id="rule-btn-game" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">あそびかた</button>
+            <button id="share-btn" class="btn btn-secondary" style="font-size: 14px; padding: 8px 16px;">シェアする</button>
+            <button id="giveup-btn" class="btn btn-danger" style="font-size: 14px; padding: 8px 16px; display: none;">ギブアップ</button>
+        </div>
+        
+        <div id="status-container">
+            <div id="status"></div>
+            <div id="timer">00:00</div>
+        </div>
+
+        <div id="game-container">
+            <input type="text" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            
+            <div id="board-area">
+                <div id="active-clue-display" style="display: none;">マスをタップしてカギを表示</div>
+                
+                <div class="board-scroll-wrapper">
+                    <div id="board"></div>
+                </div>
+                
+                <div id="action-container">
+                    <div id="special-keys" style="display: none;">
+                        <button class="sp-key">２</button>
+                        <button class="sp-key">Ｚ</button>
+                        <button class="sp-key">：</button>
+                        <button class="sp-key">・</button>
+                        <button class="sp-key">♂</button>
+                        <button class="sp-key">♀</button>
+                    </div>
+                    <button id="submit-btn" class="btn btn-primary" style="display: none; padding: 12px 24px; font-size: 16px; box-sizing: border-box;">判定する！</button>
+                </div>
+            </div>
+            
+            <div id="clues-container" style="display: none;">
+                <!-- カギのリスト部分（白いカード） -->
+                <div class="clues-card">
+                    <div class="clue-list" id="clues-across">
+                        <h3>ヨコのカギ</h3>
+                        <ul></ul>
+                    </div>
+                    <div class="clue-list" id="clues-down">
+                        <h3>タテのカギ</h3>
+                        <ul></ul>
+                    </div>
+                </div>
+                
+                <!-- パズルのメタ情報（カギ一覧の外側・下に配置） -->
+                <div id="puzzle-meta" style="display: none; align-self: flex-end; width: max-content; min-width: 240px; max-width: 100%; font-size: 13px; color: var(--text-main); line-height: 1.6; text-align: left; background: var(--surface-hover); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 共有モーダル -->
+    <div id="share-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 20px;">シェアする</h2>
+            
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="problem">問題ID</button>
+                <button class="modal-tab" data-tab="site">サイトURL</button>
+                <button class="modal-tab" id="tab-result" data-tab="result" style="display: none;">クリア結果</button>
+            </div>
+
+            <div id="share-sec-problem" class="modal-section active">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">今の問題IDを友達に送って、同じ盤面に挑戦してもらおう！</p>
+                <input type="text" id="share-id-display" readonly>
+                <div class="modal-actions">
+                    <button id="copy-id-btn" class="btn btn-primary">IDをコピー</button>
+                    <button id="tweet-id-btn" class="btn" style="background-color: var(--x-bg); color: var(--x-text);">X (Twitter) で共有</button>
+                </div>
+            </div>
+
+            <div id="share-sec-site" class="modal-section">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">ゲームのURLを直接シェアしよう！</p>
+                <div class="modal-actions">
+                    <button id="copy-site-btn" class="btn btn-primary">URLをコピー</button>
+                    <button id="tweet-site-btn" class="btn" style="background-color: var(--x-bg); color: var(--x-text);">X (Twitter) で共有</button>
+                </div>
+            </div>
+
+            <div id="share-sec-result" class="modal-section">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">クリアおめでとう！結果を自慢しよう！</p>
+                <textarea id="share-result-text" readonly rows="7" style="resize: none;"></textarea>
+                <div class="modal-actions">
+                    <button id="copy-result-btn" class="btn btn-primary">テキストをコピー</button>
+                    <button id="tweet-result-btn" class="btn" style="background-color: var(--x-bg); color: var(--x-text);">X (Twitter) で共有</button>
+                </div>
+            </div>
+
+            <button id="close-modal-btn" class="btn btn-secondary" style="margin-top: 20px; width: 100%;">とじる</button>
+        </div>
+    </div>
+
+    <!-- 汎用メッセージモーダル（アラート/確認用） -->
+    <div id="message-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-content">
+            <h2 id="message-modal-title" style="margin-top: 0; font-size: 20px; margin-bottom: 15px;"></h2>
+            <p id="message-modal-text" style="font-size: 15px; color: var(--text-main); margin-bottom: 25px; line-height: 1.6;"></p>
+            <div id="message-modal-actions" class="modal-actions" style="flex-direction: row; gap: 10px; margin-top: 0;">
+                <button id="message-modal-cancel" class="btn btn-secondary" style="flex: 1; display: none;">キャンセル</button>
+                <button id="message-modal-tweet" class="btn" style="flex: 1; background-color: var(--x-bg); color: var(--x-text); display: none;">Xで共有</button>
+                <button id="message-modal-ok" class="btn btn-primary" style="flex: 1;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊び方・ルールモーダル（干渉しない専用クラスを使用） -->
+    <div id="rule-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-content" style="max-width: 500px; text-align: left;">
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 15px; text-align: center;">あそびかた</h2>
+            
+            <div class="modal-tabs" id="rule-tabs">
+                <button class="rule-tab active" data-tab="basic">基本ルール</button>
+                <button class="rule-tab" data-tab="detail">詳細なルール</button>
+            </div>
+
+            <div id="rule-sec-basic" class="rule-section active" style="font-size: 14px; color: var(--text-main); line-height: 1.6; max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary);">基本ルール</h3>
+                <p style="margin-top: 0; margin-bottom: 15px;">タテ・ヨコのカギ（図鑑No・タイプ・特性など）をヒントにして、当てはまるポケモンの名前でマスを埋めましょう。</p>
+                
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary);">文字の入力について</h3>
+                <ul style="margin-top: 0; margin-bottom: 15px; padding-left: 20px;">
+                    <li style="margin-bottom: 6px;">小さい文字（「ァ」「ッ」「ャ」など）は、大きい文字（「ア」「ツ」「ヤ」）として扱われます。小さい文字として入力すると自動で変換されます。</li>
+                    <li style="margin-bottom: 6px;">「ニドラン♀」の「♀」や「カプ・コケコ」の「・」などは1文字として扱われ、盤面下のボタンから入力できます。</li>
+                </ul>
+
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary);">クリア条件</h3>
+                <p style="margin-top: 0; margin-bottom: 0;">すべてのマスを埋めて盤面下の「判定する！」ボタンを押し、間違っている箇所がなければ見事クリアです！</p>
+            </div>
+
+            <div id="rule-sec-detail" class="rule-section" style="font-size: 14px; color: var(--text-main); line-height: 1.6; max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary);">ポケモンの姿について</h3>
+                <ul style="margin-top: 0; margin-bottom: 15px; padding-left: 20px;">
+                    <li style="margin-bottom: 6px;">出題されるポケモンの名前は、すべて「基本名（フォルム名を含まない名前）」となります。</li>
+                    <li style="margin-bottom: 6px;">ヒント（タイプ・特性・種族値）は、リージョンフォーム（アローラのすがた等）やメガシンカなどの派生した姿ではなく、<strong>最も基本的な姿</strong>のデータを使用します。</li>
+                </ul>
+
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary);">ヒント（カギ）について</h3>
+                <ul style="margin-top: 0; margin-bottom: 15px; padding-left: 20px;">
+                    <li style="margin-bottom: 6px;">図鑑Noは<strong>「全国図鑑」</strong>の番号を使用しています。</li>
+                    <li style="margin-bottom: 6px;">タイプや種族値は<strong>最新作（スカーレット・バイオレット）時点のデータ</strong>を基準としています。</li>
+                    <li style="margin-bottom: 6px;">特性には、通常の特性だけでなく<strong>「隠れ特性（夢特性）」</strong>が含まれる場合があります。</li>
+                    <li style="margin-bottom: 6px;">「出題地方」とは、ポケモンが<strong>初登場した地方</strong>を表します。ただし、メルタンとメルメタルはアローラに属するとします。</li>
+                    <li style="margin-bottom: 6px;">種族値のヒントは、「HP / こうげき / ぼうぎょ / とくこう / とくぼう / すばやさ」の順番で表示されます。</li>
+                </ul>
+            </div>
+
+            <button id="close-rule-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%;">とじる</button>
+        </div>
+    </div>
+
+    <!-- プレイきろくモーダル -->
+    <div id="stats-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-content" style="max-width: 400px; text-align: left;">
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 15px; text-align: center;">プレイきろく</h2>
+            
+            <div id="stats-scroll-area" style="font-size: 14px; color: var(--text-main); line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                
+                <!-- 今日の問題 セクション -->
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">今日の問題</h3>
+                <ul style="list-style: none; padding: 0; margin: 0 0 24px 0;">
+                    <li style="display: flex; justify-content: space-between; margin-bottom: 6px;"><span>クリア回数</span> <strong id="stats-daily-count">0</strong></li>
+                    <li style="display: flex; justify-content: space-between; margin-bottom: 6px;"><span>連続クリア</span> <strong><span id="stats-daily-streak">0</span> <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">(最大 <span id="stats-daily-max-streak">0</span>)</span></strong></li>
+                </ul>
+
+                <!-- フリープレイ セクション（テーブル化） -->
+                <h3 style="font-size: 16px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">フリープレイ</h3>
+                <table style="width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 10px; font-size: 13px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-size: 12px;">
+                            <th style="padding: 8px 4px; text-align: left; font-weight: normal;">難易度</th>
+                            <th style="padding: 8px 4px; font-weight: normal;">クリア回数</th>
+                            <th style="padding: 8px 4px; font-weight: normal;">ベストタイム</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 10px 4px; text-align: left;">ノーマル</td>
+                            <td style="padding: 10px 4px;"><strong id="stats-free-count-normal">0</strong></td>
+                            <td style="padding: 10px 4px;"><strong id="stats-time-normal">-</strong></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 10px 4px; text-align: left;">スーパー</td>
+                            <td style="padding: 10px 4px;"><strong id="stats-free-count-super">0</strong></td>
+                            <td style="padding: 10px 4px;"><strong id="stats-time-super">-</strong></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 10px 4px; text-align: left;">ハイパー</td>
+                            <td style="padding: 10px 4px;"><strong id="stats-free-count-hyper">0</strong></td>
+                            <td style="padding: 10px 4px;"><strong id="stats-time-hyper">-</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px 4px; text-align: left;">マスター</td>
+                            <td style="padding: 10px 4px;"><strong id="stats-free-count-master">0</strong></td>
+                            <td style="padding: 10px 4px;"><strong id="stats-time-master">-</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button id="close-stats-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%;">とじる</button>
+        </div>
+    </div>
+
+    <!-- せってい（オプション）モーダル -->
+    <div id="settings-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-content" style="max-width: 400px; text-align: left;">
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 15px; text-align: center;">せってい</h2>
+            
+            <div id="settings-scroll-area" style="max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                
+                <div class="diff-options">
+                    <div class="section-title">テーマ（カラー）</div>
+                    <label><input type="radio" name="theme-setting" value="auto" checked> OSの設定に従う</label>
+                    <label><input type="radio" name="theme-setting" value="light"> ライトモード</label>
+                    <label><input type="radio" name="theme-setting" value="dark"> ダークモード</label>
+                </div>
+
+                <div class="diff-options" style="margin-top: 20px;">
+                    <div class="section-title">サウンド（SE）</div>
+                    <label><input type="checkbox" id="sound-checkbox" checked> 効果音を鳴らす</label>
+                </div>
+
+                <div class="diff-options" style="margin-top: 20px;">
+                    <div class="section-title">タイマー</div>
+                    <label><input type="checkbox" id="default-timer-checkbox"> デフォルトでチェックを入れる</label>
+                </div>
+            </div>
+
+            <button id="close-settings-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%;">とじる</button>
+        </div>
+    </div>
+
+    <!-- このサイトについて モーダル -->
+    <div id="about-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+        <div class="modal-content" style="max-width: 500px; text-align: left;">
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 15px; text-align: center;">このサイトについて</h2>
+            
+            <!-- クラスを削除し、専用のIDを付与します -->
+            <div id="about-scroll-area" style="font-size: 13px; color: var(--text-main); line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+                
+                <h3 style="font-size: 15px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">プライバシーポリシー（データの保存について）</h3>                <ul style="margin-top: 0; margin-bottom: 15px; padding-left: 20px;">
+                    <li style="margin-bottom: 6px;"><strong>セーブデータについて</strong><br>当サイトは、プレイの途中経過やクリア履歴、設定などのデータをすべてお使いの端末（ブラウザのローカルストレージ）にのみ保存しています。開発者のサーバー等に個人情報やプレイデータが送信・収集されることは一切ありません。</li>
+                    <li style="margin-bottom: 6px;"><strong>アクセス解析について</strong><br>当サイトでは、利用状況を把握するためにアクセス解析ツール（Google Analytics等）を使用する場合があります。これらは匿名でトラフィックデータを収集するものであり、個人を特定するものではありません。</li>
+                </ul>
+                
+                <h3 style="font-size: 15px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">利用規約・免責事項</h3>
+                <ul style="margin-top: 0; margin-bottom: 15px; padding-left: 20px;">
+                    <li style="margin-bottom: 6px;">当サイトは個人が作成した非公式のファンメイドゲームであり、すべての端末やブラウザでの正常な動作を保証するものではありません。</li>
+                    <li style="margin-bottom: 6px;">予告なくサービスの停止、アップデートによる仕様変更、セーブデータのリセット等が行われる場合があります。あらかじめご了承ください。</li>
+                    <li style="margin-bottom: 6px;">当サイト内のプログラムや辞書データ等を不正に抽出（スクレイピング）したり、二次配布したりする行為はご遠慮ください。</li>
+                </ul>
+
+                <h3 style="font-size: 15px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">動画配信・SNSでの共有について</h3>
+                <p style="margin-top: 0; margin-bottom: 15px;">YouTube等の動画共有サイトでの実況プレイ配信や動画化、SNSでのスクリーンショットの共有は大歓迎です！事前の連絡等も不要です。<br>動画の概要欄やSNSの投稿に、当サイトのURLや問題IDを記載していただけると、開発者の励みになります。</p>
+
+                <h3 style="font-size: 15px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">著作権について</h3>
+                <p style="margin-top: 0; margin-bottom: 15px;">当サイトは、任天堂・クリーチャーズ・ゲームフリーク・株式会社ポケモンとは一切関係のない非公式のサイトです。ゲーム内に登場するポケモン名や関連用語の著作権および商標権は、それぞれの権利者に帰属します。</p>
+
+                <h3 style="font-size: 15px; margin: 0 0 8px; color: var(--primary); border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">お問い合わせ</h3>
+                <p style="margin-top: 0; margin-bottom: 0;">バグの報告やご感想などがありましたら、開発者のX（旧Twitter）アカウントまでお気軽にお寄せください。<br>
+                <a href="https://x.com/fanta1681" target="_blank" style="display: inline-block; margin-top: 8px; color: var(--primary); text-decoration: none; font-weight: bold; background: var(--surface-hover); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border-primary);">𝕏 @fanta1681</a></p>
+            </div>
+
+            <button id="close-about-btn" class="btn btn-primary" style="margin-top: 20px; width: 100%;">とじる</button>
+        </div>
+    </div>
+
+    <script src="./js/pokemon_details.js"></script>
+    <script src="./js/pokemon_index.js"></script>
+    <script src="./js/generator.js"></script>
+    <script src="./js/globals.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/game_ui.js"></script>
+    <script src="./js/main.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    console.log('ServiceWorker 登録成功');
+                }).catch(error => {
+                    console.log('ServiceWorker 登録失敗:', error);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
