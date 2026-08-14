@@ -69,6 +69,9 @@ function generateShareText() {
         const s = (totalSec % 60).toString().padStart(2, '0');
         timeStr = `\n⏱ タイム: ${m}分${s}秒`;
     }
+
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = `${baseUrl}?id=${currentGameData.problemId}`;
     
     let extraStr = "";
     if (currentModeName.includes("今日の問題")) {
@@ -90,9 +93,9 @@ function generateShareText() {
             gridStr += "\n";
         }
         extraStr += gridStr;
-        return `#ポケモンクロスワード\n📅 ${dateStr} の問題${extraStr}\n`;
+        return `#ポケモンクロスワード\n📅 ${dateStr} の問題${extraStr}\n${shareUrl}`;
     } else {
-        return `#ポケモンクロスワード をクリアしました！🎉\n難易度: ${currentModeName}${timeStr}\n問題ID: ${currentGameData.problemId}\n\n`;
+        return `#ポケモンクロスワード をクリアしました！🎉\n難易度: ${currentModeName}${timeStr}\n\n${shareUrl}`;
     }
 }
 
@@ -1253,14 +1256,17 @@ function copyToClipboard(text, btnEl) {
 }
 
 function openTweet(text) {
-    const siteUrl = window.location.href.split('?')[0]; 
-    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(siteUrl)}`;
+    // X（Twitter）はテキスト内のURLを自動でリンクにするため、&url= パラメータは外す
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(tweetUrl, '_blank');
 }
 
 copyIdBtn.addEventListener('click', () => copyToClipboard(shareIdDisplay.value, copyIdBtn));
 tweetIdBtn.addEventListener('click', () => {
-    openTweet(`#ポケモンクロスワード のこの問題に挑戦してみて！\n問題ID: ${shareIdDisplay.value}\n\n`);
+    // ID共有時もURLをテキストに含める
+    const baseUrl = window.location.href.split('?')[0];
+    const shareUrl = `${baseUrl}?id=${shareIdDisplay.value}`;
+    openTweet(`#ポケモンクロスワード のこの問題に挑戦してみて！\n\n${shareUrl}`);
 });
 
 copySiteBtn.addEventListener('click', () => {
@@ -1268,7 +1274,8 @@ copySiteBtn.addEventListener('click', () => {
     copyToClipboard(siteUrl, copySiteBtn);
 });
 tweetSiteBtn.addEventListener('click', () => {
-    openTweet(`#ポケモンクロスワード\nタイプや特性からポケモンを推理するクロスワードパズル！\n\n`);
+    const siteUrl = window.location.href.split('?')[0];
+    openTweet(`#ポケモンクロスワード\nタイプや特性からポケモンを推理するクロスワードパズル！\n\n${siteUrl}`);
 });
 
 copyResultBtn.addEventListener('click', () => copyToClipboard(shareResultText.value, copyResultBtn));
@@ -1357,11 +1364,32 @@ if (closeSettingsBtn) {
     });
 }
 
-// 起動時に設定を読み込む
+// 起動時に設定を読み込む ＋ URLからのID起動処理
 window.addEventListener('DOMContentLoaded', () => {
     loadSettings();
-    restoreGameState();
     renderHistory();
+
+    // 1. URLパラメータ（?id=○○）をチェック
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedId = urlParams.get('id');
+
+    if (sharedId) {
+        // IDが含まれている場合、入力欄にIDをセット
+        const inputEl = document.getElementById('problem-id-input');
+        if (inputEl) inputEl.value = sharedId;
+        
+        // ブラウザのアドレスバーから "?id=○○" を消す（再読み込み時の意図せぬ再スタートを防ぐため）
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // 「IDを入力してスタート」ボタンをプログラム側から強制クリックして自動スタートさせる
+        if (startIdBtn) {
+            startIdBtn.click();
+        }
+        return; // URLからスタートした場合は、中断セーブデータの復元はスキップする
+    }
+
+    // 2. URLにIDが無い（通常アクセス）場合は、いつも通り中断データを復元
+    restoreGameState();
 });
 
 // ==========================================
