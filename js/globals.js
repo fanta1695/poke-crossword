@@ -204,8 +204,18 @@ function updateCellSize(boardWidth, boardHeight) {
     document.documentElement.style.setProperty('--cell-num-size', `${Math.floor(currentCellSize * 0.28)}px`);
 }
 
+// ==========================================
 // 画面サイズ変更時の再計算
+// ==========================================
+let lastWindowWidth = window.innerWidth; // ★追加：直前の画面幅を記憶しておく
+
 window.addEventListener('resize', () => {
+    // スマホサイズで、かつ横幅が変わっていない（＝アドレスバーの出し入れのみ）場合は無視する
+    if (window.innerWidth <= 600 && window.innerWidth === lastWindowWidth) {
+        return;
+    }
+    lastWindowWidth = window.innerWidth; // 横幅の記憶を更新
+
     if (currentGameData && gameScreen.style.display === 'flex') {
         updateCellSize(currentGameData.width, currentGameData.height);
         
