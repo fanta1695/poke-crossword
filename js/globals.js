@@ -41,6 +41,32 @@ const startIdBtn = document.getElementById('start-id-btn');
 const hiddenInput = document.getElementById('hidden-input');
 const specialKeys = document.getElementById('special-keys');
 
+// iOSのIMEフリーズ＆画面ジャンプ防止
+// 1. バトンタッチ用の見えないダミー枠を作成
+const dummyInput = document.createElement('input');
+dummyInput.type = 'text';
+dummyInput.style.position = 'fixed';
+dummyInput.style.top = '50%'; // 画面中央に配置してスクロールジャンプを防止
+dummyInput.style.left = '50%';
+dummyInput.style.opacity = '0';
+dummyInput.style.pointerEvents = 'none';
+dummyInput.style.zIndex = '-1';
+document.body.appendChild(dummyInput);
+
+// フォーカス制御
+const originalFocus = hiddenInput.focus.bind(hiddenInput);
+hiddenInput.focus = function() {
+    if (window.isImeResetting) {
+        // ダミー枠がキーボードを維持している間に0.05秒待ってから、本命にバトンを戻す
+        setTimeout(() => {
+            originalFocus({ preventScroll: true });
+            window.isImeResetting = false;
+        }, 50);
+    } else {
+        originalFocus({ preventScroll: true });
+    }
+};
+
 const activeClueDisplay = document.getElementById('active-clue-display');
 
 const timerCheckboxFree = document.getElementById('timer-checkbox-free');

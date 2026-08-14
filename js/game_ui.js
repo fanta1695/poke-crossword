@@ -227,6 +227,13 @@ const renderBoard = (dfs) => {
                 cellEl.addEventListener('click', () => {
                     if (isCleared || isGivenUp) return;
                     
+                    // iOSキーボードを閉じずに強制確定させる
+                    if (isComposing) {
+                        dummyInput.focus({ preventScroll: true }); // ダミー枠にバトンタッチ
+                        window.isImeResetting = true;
+                        isComposing = false;
+                    }
+
                     const isSameCell = (activeX === x && activeY === y);
                     
                     let val = hiddenInput.value;
@@ -365,6 +372,13 @@ const renderClues = (dfs) => {
         li.addEventListener('click', () => {
             if (isCleared || isGivenUp) return; 
             
+            // iOSキーボードを閉じずに強制確定させる
+            if (isComposing) {
+                dummyInput.focus({ preventScroll: true }); // ダミー枠にバトンタッチ
+                window.isImeResetting = true;
+                isComposing = false;
+            }
+
             let val = hiddenInput.value;
             let actualVal = val.startsWith(' ') ? val.substring(1) : val;
             clearPreview(); 
@@ -399,6 +413,13 @@ document.querySelectorAll('.sp-key').forEach(keyBtn => {
     keyBtn.addEventListener('click', (e) => {
         if (isCleared || isGivenUp) return;
         
+        // iOSキーボードを閉じずに強制確定させる
+        if (isComposing) {
+            dummyInput.focus({ preventScroll: true }); // ダミー枠にバトンタッチ
+            window.isImeResetting = true;
+            isComposing = false;
+        }
+
         let val = hiddenInput.value;
         let actualVal = val.startsWith(' ') ? val.substring(1) : val;
         clearPreview(); 
