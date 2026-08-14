@@ -588,7 +588,16 @@ function startLoadingAnimation(targetSize) {
     boardEl.style.gridTemplateColumns = "1fr";
     boardEl.style.gridTemplateRows = "1fr";
     
-    let tempSize = window.innerWidth > 600 ? Math.min(40, Math.max(26, Math.floor((window.innerHeight - 350) / targetSize))) : 40;
+    let tempSize = 40;
+    if (window.innerWidth <= 600) {
+        // スマホ時：余白100を引いて計算
+        tempSize = Math.max(24, Math.min(40, Math.floor((window.innerHeight - 100) / targetSize)));
+    } else {
+        // PC・タブレット時の計算
+        const sizeByWidth = Math.floor((window.innerWidth * 0.9) / targetSize);
+        const sizeByHeight = Math.floor((window.innerHeight - 180) / targetSize);
+        tempSize = Math.max(26, Math.min(40, Math.min(sizeByWidth, sizeByHeight)));
+    }
     const sizePx = Math.max(targetSize * tempSize, 200);
     
     boardEl.innerHTML = `
@@ -1010,7 +1019,16 @@ const tryGenerate = (targetSize, targetMinWords, hintMode, allowedGens, difficul
                 tryGenerate(targetSize, targetMinWords, hintMode, allowedGens, difficulty, attempt + 1, maxAttempts, dailySeedStr, genId); 
             } else {
                 stopLoadingAnimation();
-                let tempSize = window.innerWidth > 600 ? Math.min(40, Math.max(26, Math.floor((window.innerHeight - 350) / targetSize))) : 40;
+                let tempSize = 40;
+                if (window.innerWidth <= 600) {
+                    // スマホ時：余白100を引いて計算
+                    tempSize = Math.max(24, Math.min(40, Math.floor((window.innerHeight - 100) / targetSize)));
+                } else {
+                    // PC・タブレット時の計算
+                    const sizeByWidth = Math.floor((window.innerWidth * 0.9) / targetSize);
+                    const sizeByHeight = Math.floor((window.innerHeight - 180) / targetSize);
+                    tempSize = Math.max(26, Math.min(40, Math.min(sizeByWidth, sizeByHeight)));
+                }
                 const sizePx = Math.max(targetSize * tempSize, 200);
                 
                 let errorBoardText = "";

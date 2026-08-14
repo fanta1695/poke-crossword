@@ -174,10 +174,20 @@ function updateCellSize(boardWidth, boardHeight) {
     if (!boardWidth || !boardHeight) return;
     
     if (window.innerWidth <= 600) {
-        // スマホ画面幅（600px以下）なら、タップしやすさ優先で従来通り40px固定
-        currentCellSize = 40;
+        // ▼ 変更箇所：スマホの場合は「縦幅」を基準に計算し、横スクロールは許容する
+        
+        // 画面の高さから、盤面以外のUI（ヘッダー、カギ表示、キーボードなどの余白）を引く
+        // ※ 360 の数値は、スマホでキーボードが開いた時の余白想定です。
+        const availableHeight = window.innerHeight - 100; 
+        
+        // 縦幅ベースの理想サイズを算出
+        const sizeByHeight = Math.floor(availableHeight / boardHeight);
+        
+        // 小さくなりすぎないよう下限(24px)を設けつつ、最大40pxに収める
+        currentCellSize = Math.max(24, Math.min(40, sizeByHeight));
+        
     } else {
-        // PC・タブレットなら、画面に収まるように計算
+        // PC・タブレットなら、縦横両方が画面に収まるように計算（ここはそのまま）
         const availableWidth = window.innerWidth * 0.9; 
         const availableHeight = window.innerHeight - 180; 
         
