@@ -67,11 +67,11 @@ function generateShareText() {
         const totalSec = Math.floor(currentElapsed / 1000);
         const m = Math.floor(totalSec / 60);
         const s = (totalSec % 60).toString().padStart(2, '0');
-        timeStr = `\n⏱ タイム: ${m}分${s}秒`;
+        timeStr = `\nタイム: ${m}分${s}秒`;
     }
-
+    
+    // ベースとなるURL（パラメータ無し）
     const baseUrl = window.location.href.split('?')[0];
-    const shareUrl = `${baseUrl}?id=${currentGameData.problemId}`;
     
     let extraStr = "";
     if (currentModeName.includes("今日の問題")) {
@@ -93,8 +93,12 @@ function generateShareText() {
             gridStr += "\n";
         }
         extraStr += gridStr;
-        return `#ポケモンクロスワード\n📅 ${dateStr} の問題${extraStr}\n${shareUrl}`;
+        
+        // 「今日の問題」の場合はIDを付けず、トップページのURLにする
+        return `#ポケモンクロスワード\n${dateStr} の問題${extraStr}\n${baseUrl}`;
     } else {
+        // 「フリープレイ・シェアされた問題」の場合はID付きのURLにする
+        const shareUrl = `${baseUrl}?id=${currentGameData.problemId}`;
         return `#ポケモンクロスワード をクリアしました！🎉\n難易度: ${currentModeName}${timeStr}\n\n${shareUrl}`;
     }
 }
