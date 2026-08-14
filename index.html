@@ -231,7 +231,7 @@
         }
 
         /* ダークモードでも文字が黒くなるように固定 */
-        .cell-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: var(--cell-font-size, 20px); font-weight: 700; color: var(--cell-text); pointer-events: none; }
+        .cell-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: var(--cell-font-size, 20px); font-weight: 700; color: var(--cell-text); pointer-events: none; font-family: Arial, "Helvetica Neue", sans-serif; line-height: 1;}
         .cell-number { position: absolute; top: 2px; left: 3px; font-size: var(--cell-num-size, 11px); font-weight: 600; color: var(--cell-number); pointer-events: none; }
 
         #active-clue-display {
@@ -254,9 +254,27 @@
 
         #action-container { display: flex; width: 400px; max-width: 100%; margin-top: 5px; gap: 15px; align-items: center; justify-content: center; }
         #special-keys { display: none; flex-wrap: wrap; gap: 4px; width: 120px; flex-shrink: 0; align-content: center; }
-        .sp-key { flex: 1 1 30%; font-size: 13px; font-weight: 700; padding: 0; height: 28px; background-color: var(--surface); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; }
-        .sp-key:active { transform: translateY(1px); background-color: var(--surface-active); }
 
+        .sp-key { 
+            flex: 1 1 30%; 
+            font-size: 13px; 
+            font-weight: 700; 
+            padding: 0 0 2px 0; /* 変更: 下側にだけ2pxの余白を追加して記号を上に押し上げる */
+            height: 28px; 
+            box-sizing: border-box; /* 追加: 余白を追加しても全体の高さ(28px)を維持する */
+            background-color: var(--surface); 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            color: var(--text-muted); 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: 0.1s; 
+            font-family: Arial, "Helvetica Neue", sans-serif; /* 追加: iOSの記号ズレを防止 */
+            line-height: 1; /* 追加: 余計な行間をなくす */
+        }
+        .sp-key:active { transform: translateY(1px); background-color: var(--surface-active); }
         #submit-btn { display: none; padding: 12px 24px; font-size: 16px; box-sizing: border-box; }
 
         /* カギとメタ情報を包む透明なラッパー */
