@@ -1463,9 +1463,9 @@ window.addEventListener('DOMContentLoaded', () => {
         cancelBtn.textContent = "やめる";
 
         // メッセージの作成（プレイ中データがある場合は警告を足す）
-        let message = "シェアされた問題リンクからアクセスしました。<br>この問題で遊びますか？";
+        let message = "シェアされたリンクからアクセスしました。<br>この問題で遊びますか？";
         if (inProgressState) {
-            message += "<br><br><span style='color: var(--danger); font-size: 13px; font-weight: bold;'>※「遊ぶ」を選ぶと、現在プレイ中の中断データは消去されます</span>";
+            message += "<br><br><span style='color: var(--danger); font-size: 13px; font-weight: bold;'>※「遊ぶ」を選ぶと、中断したデータは消去されます</span>";
         }
 
         showMessageModal(
