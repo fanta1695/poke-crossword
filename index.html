@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="タイプや特性からポケモンを推理するクロスワード！日替わりの「今日の問題」や難易度別の「フリープレイ」で、あなたのポケモン知識を試そう！">
     <title>ポケモンクロスワード</title>
-    
+
     <!-- Google Search Console -->
     <meta name="google-site-verification" content="mvJ1HihsmN5pSqPkYL6Et5re4fELzaK7_NM4Y5Aga-s" />
 
@@ -636,10 +636,13 @@
             </div>
 
             <div id="share-sec-problem" class="modal-section active">
-                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">今の問題IDを友達に送って、同じ盤面に挑戦してもらおう！</p>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">今の問題リンクを友達に送って、同じ盤面に挑戦してもらおう！</p>
                 <input type="text" id="share-id-display" readonly>
                 <div class="modal-actions">
-                    <button id="copy-id-btn" class="btn btn-primary">IDをコピー</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="copy-id-btn" class="btn btn-primary" style="flex: 1;">IDをコピー</button>
+                        <button id="copy-problem-link-btn" class="btn btn-primary" style="flex: 1;">URLをコピー</button>
+                    </div>
                     <button id="tweet-id-btn" class="btn" style="background-color: var(--x-bg); color: var(--x-text);">X (Twitter) で共有</button>
                 </div>
             </div>

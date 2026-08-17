@@ -1250,7 +1250,7 @@ closeModalBtn.addEventListener('click', () => {
 function copyToClipboard(text, btnEl) {
     navigator.clipboard.writeText(text).then(() => {
         const originalText = btnEl.textContent;
-        btnEl.textContent = "コピーしました！";
+        btnEl.textContent = "コピーしました";
         setTimeout(() => { btnEl.textContent = originalText; }, 2000);
     }).catch(() => {
         alert("コピーに失敗しました。");
@@ -1264,6 +1264,17 @@ function openTweet(text) {
 }
 
 copyIdBtn.addEventListener('click', () => copyToClipboard(shareIdDisplay.value, copyIdBtn));
+
+const copyProblemLinkBtn = document.getElementById('copy-problem-link-btn');
+if (copyProblemLinkBtn) {
+    copyProblemLinkBtn.addEventListener('click', () => {
+        // 現在のURLベースを取得し、IDパラメータをくっつけてコピーする
+        const baseUrl = window.location.href.split('?')[0];
+        const shareUrl = `${baseUrl}?id=${shareIdDisplay.value}`;
+        copyToClipboard(shareUrl, copyProblemLinkBtn);
+    });
+}
+
 tweetIdBtn.addEventListener('click', () => {
     // ID共有時もURLをテキストに含める
     const baseUrl = window.location.href.split('?')[0];
