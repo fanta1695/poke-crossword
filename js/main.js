@@ -224,11 +224,6 @@ function restoreGameState() {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    restoreGameState();
-    renderHistory();
-});
-
 // ==========================================
 // 履歴の管理
 // ==========================================
@@ -1371,32 +1366,139 @@ if (closeSettingsBtn) {
     });
 }
 
-// 起動時に設定を読み込む ＋ URLからのID起動処理
+// ==========================================
+// 起動時のURL制御と「戻るボタン」の対応
+// ==========================================
 window.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     renderHistory();
 
-    // 1. URLパラメータ（?id=○○）をチェック
     const urlParams = new URLSearchParams(window.location.search);
     const sharedId = urlParams.get('id');
 
-    if (sharedId) {
-        // IDが含まれている場合、入力欄にIDをセット
-        const inputEl = document.getElementById('problem-id-input');
-        if (inputEl) inputEl.value = sharedId;
-        
-        // ブラウザのアドレスバーから "?id=○○" を消す（再読み込み時の意図せぬ再スタートを防ぐため）
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        // 「IDを入力してスタート」ボタンをプログラム側から強制クリックして自動スタートさせる
-        if (startIdBtn) {
-            startIdBtn.click();
+    // 1. 中断データがあるかチェック
+    const savedStateJson = localStorage.getItem('pokemonCrosswordState');
+    let inProgressState = null;
+
+    if (savedStateJson) {
+        try {
+            const state = JSON.parse(savedStateJson);
+            if (!state.isCleared && !state.isGivenUp) {
+                inProgressState = state;
+            }
+        } catch (e) {
+            console.error("セーブデータの解析エラー", e);
         }
-        return; // URLからスタートした場合は、中断セーブデータの復元はスキップする
     }
 
-    // 2. URLにIDが無い（通常アクセス）場合は、いつも通り中断データを復元
-    restoreGameState();
+    // 新規スタート時の共通処理
+    const handleNewSession = () => {
+        clearGameState(); 
+        if (window.location.hash === '#game') {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    };
+
+    // 通常の「中断データからの復帰」処理をまとめた関数
+    const handleInProgressState = () => {
+        if (inProgressState) {
+            if (window.location.hash === '#game') {
+                restoreStateObj(inProgressState);
+                return;
+            }
+
+            titleScreen.style.display = 'flex';
+            const trc = document.getElementById('title-rule-container');
+            if (trc) trc.style.display = 'flex';
+            gameScreen.style.display = 'none';
+
+            const cancelBtn = document.getElementById('message-modal-cancel');
+            const originalCancelText = cancelBtn.textContent;
+            cancelBtn.textContent = "新しく遊ぶ";
+
+            showMessageModal(
+                "ゲームの再開", 
+                "プレイ中の問題があります。<br>続きから再開しますか？", 
+                true, 
+                (res) => {
+                    cancelBtn.textContent = originalCancelText;
+                    if (res) {
+                        restoreStateObj(inProgressState);
+                        if (window.location.hash !== '#game') {
+                            window.history.replaceState(null, '', window.location.pathname + window.location.search + '#game');
+                        }
+                    } else {
+                        handleNewSession();
+                    }
+                }, 
+                false, 
+                "再開する" 
+            );
+        } else {
+            handleNewSession();
+        }
+    };
+
+    // 2. シェアリンク（?id=...）からアクセスされた場合の処理
+    if (sharedId) {
+        // いきなりゲーム画面にせず、まずはタイトル画面を表示する
+        titleScreen.style.display = 'flex';
+        const trc = document.getElementById('title-rule-container');
+        if (trc) trc.style.display = 'flex';
+        gameScreen.style.display = 'none';
+
+        const cancelBtn = document.getElementById('message-modal-cancel');
+        const originalCancelText = cancelBtn.textContent;
+        cancelBtn.textContent = "やめる";
+
+        // メッセージの作成（プレイ中データがある場合は警告を足す）
+        let message = "シェアされた問題リンクからアクセスしました。<br>この問題で遊びますか？";
+        if (inProgressState) {
+            message += "<br><br><span style='color: var(--danger); font-size: 13px; font-weight: bold;'>※「遊ぶ」を選ぶと、現在プレイ中の中断データは消去されます</span>";
+        }
+
+        showMessageModal(
+            "シェアされた問題", 
+            message, 
+            true, 
+            (res) => {
+                cancelBtn.textContent = originalCancelText;
+                if (res) {
+                    // 「遊ぶ」を選んだ場合：シェアされた問題をスタート
+                    clearGameState(); 
+                    const inputEl = document.getElementById('problem-id-input');
+                    if (inputEl) inputEl.value = sharedId;
+                    
+                    window.history.replaceState({}, document.title, window.location.pathname + '#game');
+                    if (startIdBtn) startIdBtn.click();
+                } else {
+                    // 「やめる」を選んだ場合：URLからIDを消して通常のアクセスとして処理を続行
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    handleInProgressState();
+                }
+            },
+            false,
+            "遊ぶ"
+        );
+        return; // ポップアップの回答待ちになるため、ここで処理を止める
+    }
+
+    // 3. 通常アクセス（シェアIDがない場合）は中断データをチェック
+    handleInProgressState();
+});
+
+// スマホの「戻る」スワイプや、ブラウザの戻るボタンに対応させる処理
+window.addEventListener('popstate', () => {
+    if (window.location.hash !== '#game' && gameScreen.style.display === 'flex') {
+        stopTimer(); 
+        stopLoadingAnimation(); 
+        timerEl.style.display = 'none';
+        gameScreen.style.display = 'none';
+        titleScreen.style.display = 'flex';
+        const trc = document.getElementById('title-rule-container');
+        if (trc) trc.style.display = 'flex';
+        clearGameState();
+    }
 });
 
 // ==========================================
