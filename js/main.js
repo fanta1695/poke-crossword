@@ -1163,11 +1163,7 @@ startIdBtn.addEventListener('click', () => {
     let history = JSON.parse(localStorage.getItem('pokemonCrosswordHistory') || '[]');
     let existingRecord = history.find(h => h.id === idInput);
     
-    if (existingRecord) {
-        currentModeName = existingRecord.modeName; // 履歴にあれば元の名前（例: 今日の問題）
-    } else {
-        currentModeName = "シェアされた問題";      // なければ新規として扱う
-    }
+    currentModeName = "シェアされた問題";
     
     addHistory(idInput, currentModeName, `${dfs.width}×${dfs.height}`);
 
