@@ -1264,17 +1264,15 @@ copyIdBtn.addEventListener('click', () => copyToClipboard(shareIdDisplay.value, 
 const copyProblemLinkBtn = document.getElementById('copy-problem-link-btn');
 if (copyProblemLinkBtn) {
     copyProblemLinkBtn.addEventListener('click', () => {
-        // 現在のURLベースを取得し、IDパラメータをくっつけてコピーする
-        const baseUrl = window.location.href.split('?')[0];
-        const shareUrl = `${baseUrl}?id=${shareIdDisplay.value}`;
+        const cleanUrl = window.location.origin + window.location.pathname;
+        const shareUrl = `${cleanUrl}?id=${shareIdDisplay.value}`;
         copyToClipboard(shareUrl, copyProblemLinkBtn);
     });
 }
 
 tweetIdBtn.addEventListener('click', () => {
-    // ID共有時もURLをテキストに含める
-    const baseUrl = window.location.href.split('?')[0];
-    const shareUrl = `${baseUrl}?id=${shareIdDisplay.value}`;
+    const cleanUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${cleanUrl}?id=${shareIdDisplay.value}`;
     openTweet(`#ポケモンクロスワード のこの問題に挑戦してみて！\n\n${shareUrl}`);
 });
 
@@ -1382,6 +1380,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const urlParams = new URLSearchParams(window.location.search);
     const sharedId = urlParams.get('id');
+
+    // もし「#game?id=...」という間違ったURLでアクセスされた場合の救済措置
+    if (!sharedId && window.location.hash.includes('?id=')) {
+        const hashQuery = window.location.hash.split('?')[1];
+        if (hashQuery) {
+            const hashParams = new URLSearchParams(hashQuery);
+            sharedId = hashParams.get('id');
+        }
+    }
 
     // 1. 中断データがあるかチェック
     const savedStateJson = localStorage.getItem('pokemonCrosswordState');

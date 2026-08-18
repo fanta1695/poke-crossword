@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pokemon-crossword-v6';
+const CACHE_NAME = 'pokemon-crossword-v7';
 const urlsToCache = [
   './',                   // トップディレクトリ
   './index.html',
