@@ -320,13 +320,33 @@ const renderClues = (dfs) => {
         if(details) {
             let hintParts = [];
             const mode = dfs.hintMode;
+
+            const getRegionName = (noStr) => {
+                const no = parseInt(noStr, 10);
+                if (no >= 1 && no <= 151) return 'カントー';
+                if (no >= 152 && no <= 251) return 'ジョウト';
+                if (no >= 252 && no <= 386) return 'ホウエン';
+                if (no >= 387 && no <= 493) return 'シンオウ';
+                if (no >= 494 && no <= 649) return 'イッシュ';
+                if (no >= 650 && no <= 721) return 'カロス';
+                if (no >= 722 && no <= 809) return 'アローラ';
+                if (no >= 810 && no <= 905) return 'ガラル/ヒスイ';
+                if (no >= 906 && no <= 1025) return 'パルデア';
+                return '不明';
+            };
             
             if (mode.type === 'normal') {
-                if (details.no) { hintParts.push(`No. ${parseInt(details.no, 10)}`); generatedCondition['no'] = details.no; }
+                if (details.no) {
+                    hintParts.push(`No. ${parseInt(details.no, 10)}（${getRegionName(details.no)}）`); 
+                    generatedCondition['no'] = details.no;
+                }
                 if (details.type) { hintParts.push(`タイプ: ${details.type.join('・')}`); generatedCondition['type'] = details.type; }
                 if (details.ability) { hintParts.push(`特性: ${details.ability.join(' / ')}`); generatedCondition['ability'] = details.ability; }
             } else if (mode.type === 'super') {
-                if (details.no) { hintParts.push(`No. ${parseInt(details.no, 10)}`); generatedCondition['no'] = details.no; }
+                if (details.no) { 
+                    hintParts.push(`No. ${parseInt(details.no, 10)}（${getRegionName(details.no)}）`); 
+                    generatedCondition['no'] = details.no;
+                }
                 if (details.type) { hintParts.push(`タイプ: ${details.type.join('・')}`); generatedCondition['type'] = details.type; }
             } else if (mode.type === 'select') {
                 const validKeys = mode.selected.filter(k => details[k]);
@@ -347,7 +367,10 @@ const renderClues = (dfs) => {
                         chosenKey = validKeys[rng.nextInt(validKeys.length)];
                     }
                     
-                    if (chosenKey === 'no') { hintParts.push(`No. ${parseInt(details.no, 10)}`); generatedCondition['no'] = details.no; }
+                    if (chosenKey === 'no') { 
+                        hintParts.push(`No. ${parseInt(details.no, 10)}（${getRegionName(details.no)}）`); 
+                        generatedCondition['no'] = details.no; 
+                    }
                     else if (chosenKey === 'type') { hintParts.push(`タイプ: ${details.type.join('・')}`); generatedCondition['type'] = details.type; }
                     else if (chosenKey === 'ability') { hintParts.push(`特性: ${details.ability.join(' / ')}`); generatedCondition['ability'] = details.ability; }
                     else if (chosenKey === 'stats') { hintParts.push(`種族値: ${details.stats}`); generatedCondition['stats'] = details.stats; }
